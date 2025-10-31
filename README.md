@@ -26,7 +26,7 @@
 
 ```bash
 # 克隆项目
-git clone https://github.com/eskiyin/s1cli.git
+git clone https://github.com/Geoion/s1cli.git
 cd s1cli
 
 # 安装
@@ -37,7 +37,7 @@ uv pip install -e .
 
 ```bash
 # 克隆项目
-git clone https://github.com/eskiyin/s1cli.git
+git clone https://github.com/Geoion/s1cli.git
 cd s1cli
 
 # 安装
@@ -364,9 +364,94 @@ MIT License - 详见 [LICENSE](LICENSE) 文件
 
 ## 🔗 链接
 
-- **项目主页**: https://github.com/eskiyin/s1cli
-- **问题反馈**: https://github.com/eskiyin/s1cli/issues
+- **项目主页**: https://github.com/Geoion/s1cli
+- **问题反馈**: https://github.com/Geoion/s1cli/issues
 - **Stage1st 论坛**: https://stage1st.com/
+
+---
+
+## 📝 更新日志
+
+### [0.1.0] - 2025-10-31
+
+#### 重大更新
+
+##### 📝 文档整合
+- ✅ 将所有 markdown 文件（DEVELOPMENT.md、QUICKSTART.md、PROJECT_SUMMARY.md）合并到单一的 README.md
+- ✅ README.md 现在包含完整的使用说明、开发文档、技术要点和常见问题
+- ✅ 文档更加集中和易于维护
+
+##### 📦 包管理器迁移
+- ✅ 从 Poetry 迁移到 uv（更快的 Python 包管理器）
+- ✅ pyproject.toml 采用标准 PEP 621 格式
+- ✅ 使用 hatchling 作为构建后端（更轻量）
+- ✅ 完全兼容 pip 和 uv
+
+##### 🛠️ 项目改进
+- ✅ 更新 .gitignore 支持 uv.lock
+- ✅ 简化项目根目录（只保留核心文件）
+- ✅ 统一文档风格和格式
+
+#### 安装方式更新
+
+##### 旧方式（Poetry）
+```bash
+poetry install
+```
+
+##### 新方式（uv，推荐）
+```bash
+uv pip install -e .
+
+# 或使用 pip
+pip install -e .
+```
+
+#### 兼容性
+- ✅ 完全向后兼容
+- ✅ 不影响现有功能
+- ✅ 支持 Python 3.9+
+
+#### 功能清单
+
+##### ✅ 已实现
+- 完整的 Discuz API 封装
+- 命令行接口（双模式）
+- 配置和会话管理
+- 登录状态持久化
+- Chrome UA 模拟
+- 请求频率限制
+- TUI 基础框架
+
+##### 🎉 新增功能（2025-10-31）
+
+###### TUI 界面全部完成
+- ✅ 登录界面（带表单输入）
+- ✅ 帖子列表界面（可滚动DataTable）
+- ✅ 帖子详情查看界面（支持分页）
+- ✅ 发帖编辑器（标题+内容）
+- ✅ 回帖编辑器（内容编辑）
+- ✅ 搜索界面（实时搜索）
+- ✅ 完整的快捷键支持
+- ✅ 集成到主应用
+
+###### 错误处理机制
+- ✅ 自定义异常类（7种异常类型）
+- ✅ 重试装饰器（指数退避）
+- ✅ 错误处理装饰器
+- ✅ 友好的错误提示
+
+###### 代码质量
+- ✅ 新增 7 个界面和工具文件
+- ✅ 总代码量达 2,500+ 行
+- ✅ 完整的类型注解
+- ✅ 详细的文档字符串
+
+##### 🚧 未来可选功能
+- 本地缓存机制
+- 单元测试
+- 图片预览
+- BBCode 格式化
 
 ---
 

@@ -4,6 +4,7 @@ from bs4 import BeautifulSoup
 from datetime import datetime
 from s1cli.api.client import S1Client
 from s1cli.models.thread import Thread, Post
+from s1cli.utils import get_signature
 
 
 class ThreadAPI:
@@ -288,6 +289,9 @@ class ThreadAPI:
             新帖子的 ID，失败返回 None
         """
         try:
+            # 在内容末尾添加签名
+            content_with_signature = content + get_signature()
+            
             # 1. 获取发帖页面，提取 formhash
             post_page_url = f"forum.php?mod=post&action=newthread&fid={forum_id}"
             response = self.client.get(post_page_url)
@@ -307,7 +311,7 @@ class ThreadAPI:
                 'posttime': str(int(datetime.now().timestamp())),
                 'wysiwyg': '1',
                 'subject': title,
-                'message': content,
+                'message': content_with_signature,
                 'topicsubmit': 'yes',
                 'save': '',
             }
@@ -361,6 +365,9 @@ class ThreadAPI:
             新回复的 ID，失败返回 None
         """
         try:
+            # 在内容末尾添加签名
+            content_with_signature = content + get_signature()
+            
             # 1. 获取回复页面，提取 formhash
             reply_url = f"forum.php?mod=post&action=reply&tid={thread_id}"
             if quote_post_id:
@@ -382,7 +389,7 @@ class ThreadAPI:
                 'formhash': formhash,
                 'posttime': str(int(datetime.now().timestamp())),
                 'wysiwyg': '1',
-                'message': content,
+                'message': content_with_signature,
                 'replysubmit': 'yes',
                 'save': '',
             }

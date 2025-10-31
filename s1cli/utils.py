@@ -69,3 +69,15 @@ def truncate_text(text: str, max_length: int = 50, suffix: str = "...") -> str:
         return text
     return text[:max_length - len(suffix)] + suffix
 
+
+def get_signature() -> str:
+    """获取 s1cli 签名
+    
+    Returns:
+        签名字符串
+    """
+    from s1cli import __version__
+    project_url = "https://github.com/Geoion/s1cli"
+    return f"\n\n-- 来自 s1cli {__version__} {project_url}"
+
+

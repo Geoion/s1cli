@@ -190,3 +190,4 @@ class ThreadViewScreen(Screen):
         container = self.query_one("#content-container", ScrollableContainer)
         container.scroll_up()
 
+

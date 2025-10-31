@@ -219,3 +219,4 @@ class AuthAPI:
             print(f"获取用户信息异常：{e}")
             return self.config.get_user_info()
 
+

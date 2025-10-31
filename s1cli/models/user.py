@@ -23,3 +23,4 @@ class User:
     def __str__(self) -> str:
         return f"{self.username} (UID: {self.uid})"
 
+
