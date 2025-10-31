@@ -1,9 +1,29 @@
 """S1CLI 主入口"""
 import sys
+import os
 import click
 from rich.console import Console
 
 from s1cli.config import Config
+
+# 设置 Windows 环境下的 UTF-8 编码
+if sys.platform == 'win32':
+    # 设置环境变量
+    os.environ['PYTHONIOENCODING'] = 'utf-8'
+    # 设置控制台代码页为 UTF-8（Windows 10+）
+    try:
+        os.system('chcp 65001 > nul 2>&1')
+    except:
+        pass
+    # 重新配置 stdout/stderr 为 UTF-8
+    try:
+        sys.stdout.reconfigure(encoding='utf-8')
+        sys.stderr.reconfigure(encoding='utf-8')
+    except AttributeError:
+        # Python 3.6 及以下版本不支持 reconfigure
+        import codecs
+        sys.stdout = codecs.getwriter('utf-8')(sys.stdout.buffer, 'strict')
+        sys.stderr = codecs.getwriter('utf-8')(sys.stderr.buffer, 'strict')
 
 console = Console()
 

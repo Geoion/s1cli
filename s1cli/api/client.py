@@ -125,6 +125,10 @@ class S1Client:
         
         response = self._client.get(url, params=params, headers=request_headers)
         
+        # 确保响应编码正确（针对中文网站）
+        if 'text/html' in response.headers.get('content-type', ''):
+            response.encoding = response.encoding or 'utf-8'
+        
         # 保存 cookies
         self._save_cookies()
         
@@ -172,6 +176,10 @@ class S1Client:
             response = self._client.post(url, json=json, headers=request_headers)
         else:
             response = self._client.post(url, headers=request_headers)
+        
+        # 确保响应编码正确（针对中文网站）
+        if 'text/html' in response.headers.get('content-type', ''):
+            response.encoding = response.encoding or 'utf-8'
         
         # 保存 cookies
         self._save_cookies()
