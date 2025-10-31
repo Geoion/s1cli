@@ -322,6 +322,44 @@ time.sleep(delay)
 - [ ] 集成测试
 - [ ] Mock 测试数据
 
+## 🪟 Windows 用户特别说明
+
+### 中文显示问题
+
+本项目已经内置了 Windows UTF-8 编码支持，但为了获得最佳体验，建议：
+
+#### 推荐终端
+- ✅ **Windows Terminal**（推荐，完美支持）
+- ✅ **新版 PowerShell 7+**（推荐）
+- ⚠️ **PowerShell 5.x**（基本支持）
+- ❌ **CMD**（不推荐，UTF-8 支持较差）
+
+#### 系统设置（可选）
+
+**Windows 10 1903+ / Windows 11:**
+
+1. 打开 **设置** → **时间和语言** → **语言和区域**
+2. 点击 **管理语言设置** → **更改系统区域设置**
+3. 勾选 **✓ Beta 版：使用 Unicode UTF-8 提供全球语言支持**
+4. 重启电脑
+
+#### 测试编码支持
+
+```bash
+# 运行编码测试脚本
+python test_encoding.py
+```
+
+如果看到所有中文字符、特殊符号和表格正常显示，说明配置成功！
+
+### 安装 Windows Terminal（推荐）
+
+```powershell
+# 通过 Microsoft Store 安装
+# 或使用 winget
+winget install Microsoft.WindowsTerminal
+```
+
 ## 💡 常见问题
 
 ### 登录失败
@@ -342,6 +380,33 @@ time.sleep(delay)
 ### 会话过期
 
 会话会在 7 天后自动过期，过期后运行 `s1cli login` 重新登录即可。
+
+### Windows 下看到乱码
+
+**原因：** 终端编码不支持 UTF-8
+
+**解决方案：**
+
+1. **最简单：** 使用 Windows Terminal（推荐）
+   ```powershell
+   winget install Microsoft.WindowsTerminal
+   ```
+
+2. **PowerShell 临时修复：**
+   ```powershell
+   # 在运行 s1cli 之前执行
+   chcp 65001
+   $OutputEncoding = [System.Text.Encoding]::UTF8
+   ```
+
+3. **永久修复：** 
+   - 参考上面的 "Windows 用户特别说明" 章节
+   - 启用系统级 UTF-8 支持
+
+4. **验证：**
+   ```bash
+   python test_encoding.py
+   ```
 
 ## 🤝 贡献
 
@@ -367,92 +432,3 @@ MIT License - 详见 [LICENSE](LICENSE) 文件
 - **项目主页**: https://github.com/Geoion/s1cli
 - **问题反馈**: https://github.com/Geoion/s1cli/issues
 - **Stage1st 论坛**: https://stage1st.com/
-
----
-
-## 📝 更新日志
-
-### [0.1.0] - 2025-10-31
-
-#### 重大更新
-
-##### 📝 文档整合
-- ✅ 将所有 markdown 文件（DEVELOPMENT.md、QUICKSTART.md、PROJECT_SUMMARY.md）合并到单一的 README.md
-- ✅ README.md 现在包含完整的使用说明、开发文档、技术要点和常见问题
-- ✅ 文档更加集中和易于维护
-
-##### 📦 包管理器迁移
-- ✅ 从 Poetry 迁移到 uv（更快的 Python 包管理器）
-- ✅ pyproject.toml 采用标准 PEP 621 格式
-- ✅ 使用 hatchling 作为构建后端（更轻量）
-- ✅ 完全兼容 pip 和 uv
-
-##### 🛠️ 项目改进
-- ✅ 更新 .gitignore 支持 uv.lock
-- ✅ 简化项目根目录（只保留核心文件）
-- ✅ 统一文档风格和格式
-
-#### 安装方式更新
-
-##### 旧方式（Poetry）
-```bash
-poetry install
-```
-
-##### 新方式（uv，推荐）
-```bash
-uv pip install -e .
-
-# 或使用 pip
-pip install -e .
-```
-
-#### 兼容性
-- ✅ 完全向后兼容
-- ✅ 不影响现有功能
-- ✅ 支持 Python 3.9+
-
-#### 功能清单
-
-##### ✅ 已实现
-- 完整的 Discuz API 封装
-- 命令行接口（双模式）
-- 配置和会话管理
-- 登录状态持久化
-- Chrome UA 模拟
-- 请求频率限制
-- TUI 基础框架
-
-##### 🎉 新增功能（2025-10-31）
-
-###### TUI 界面全部完成
-- ✅ 登录界面（带表单输入）
-- ✅ 帖子列表界面（可滚动DataTable）
-- ✅ 帖子详情查看界面（支持分页）
-- ✅ 发帖编辑器（标题+内容）
-- ✅ 回帖编辑器（内容编辑）
-- ✅ 搜索界面（实时搜索）
-- ✅ 完整的快捷键支持
-- ✅ 集成到主应用
-
-###### 错误处理机制
-- ✅ 自定义异常类（7种异常类型）
-- ✅ 重试装饰器（指数退避）
-- ✅ 错误处理装饰器
-- ✅ 友好的错误提示
-
-###### 代码质量
-- ✅ 新增 7 个界面和工具文件
-- ✅ 总代码量达 2,500+ 行
-- ✅ 完整的类型注解
-- ✅ 详细的文档字符串
-
-##### 🚧 未来可选功能
-- 本地缓存机制
-- 单元测试
-- 图片预览
-- BBCode 格式化
-
----
-
-**Made with ❤️ by eskiyin**

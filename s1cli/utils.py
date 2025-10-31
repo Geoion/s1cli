@@ -74,10 +74,11 @@ def get_signature() -> str:
     """获取 s1cli 签名
     
     Returns:
-        签名字符串
+        签名字符串（使用 Discuz BBCode 格式的超链接）
     """
     from s1cli import __version__
-    project_url = "https://github.com/Geoion/s1cli"
-    return f"\n\n-- 来自 s1cli {__version__} {project_url}"
+    project_url = "https://github.com/eskiyin/s1cli"
+    # 使用 Discuz BBCode 格式的链接: [url=链接]文本[/url]
+    return f"\n\n-- 来自 [url={project_url}]s1cli {__version__}[/url]"
 
 
