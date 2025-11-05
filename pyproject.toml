@@ -1,6 +1,6 @@
 [project]
 name = "s1cli"
-version = "0.1.0"
+version = "0.1.1"
 description = "Stage1st 论坛命令行工具 - 一个命令行客户端"
 authors = [{ name = "Geoion" }]
 readme = "README.md"

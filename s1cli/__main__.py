@@ -30,7 +30,7 @@ console = Console()
 
 @click.group(invoke_without_command=True)
 @click.pass_context
-@click.version_option(version="0.1.0")
+@click.version_option(version="0.1.1")
 def cli(ctx):
     """S1CLI - Stage1st 论坛命令行工具
     
@@ -78,6 +78,10 @@ def cli(ctx):
     \b
     # 在指定版块内搜索
     s1cli search 塞尔达 -f 游戏论坛
+    
+    \b
+    # 每日签到打卡
+    s1cli checkin
     
     \b
     # 查看个人信息
@@ -528,15 +532,59 @@ def debug(ua, show_expire):
 
 @cli.command()
 def checkin():
-    """每日签到"""
+    """每日签到打卡"""
     from s1cli.api.client import S1Client
+    from s1cli.api.auth import AuthAPI
+    from rich.panel import Panel
     
     config = Config()
-    client = S1Client(config)
     
-    console.print("[cyan]正在签到...[/cyan]")
-    # TODO: 实现签到功能
-    console.print("[bold yellow]签到功能开发中...[/bold yellow]")
+    # 检查登录状态
+    if not config.is_logged_in():
+        console.print("[bold red]✗ 请先登录！[/bold red]")
+        console.print("[dim]使用 's1cli login' 登录账号[/dim]")
+        sys.exit(1)
+    
+    client = S1Client(config)
+    auth = AuthAPI(client)
+    
+    console.print("[cyan]🎯 正在签到...[/cyan]")
+    
+    try:
+        result = auth.daily_checkin()
+        
+        if result['success']:
+            # 签到成功
+            message = result['message']
+            reward = result.get('reward')
+            
+            if reward:
+                reward_text = []
+                if 'coins' in reward:
+                    reward_text.append(f"💰 金币 +{reward['coins']}")
+                if 'credits' in reward:
+                    reward_text.append(f"⭐ 积分 +{reward['credits']}")
+                
+                if reward_text:
+                    message += "\n" + " | ".join(reward_text)
+            
+            console.print(Panel(
+                message,
+                title="[bold green]✓ 签到成功[/bold green]",
+                border_style="green"
+            ))
+        else:
+            # 签到失败
+            console.print(Panel(
+                result['message'],
+                title="[bold red]✗ 签到失败[/bold red]",
+                border_style="red"
+            ))
+            sys.exit(1)
+            
+    except Exception as e:
+        console.print(f"[bold red]✗ 签到出错：{e}[/bold red]")
+        sys.exit(1)
 
 
 @cli.command()

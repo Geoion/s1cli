@@ -218,6 +218,118 @@ class AuthAPI:
         except Exception as e:
             print(f"获取用户信息异常：{e}")
             return self.config.get_user_info()
+    
+    def daily_checkin(self) -> Dict[str, Any]:
+        """每日签到打卡
+        
+        Returns:
+            签到结果字典，包含：
+            - success: 是否成功
+            - message: 提示信息
+            - reward: 奖励信息（如果有）
+        """
+        result = {
+            'success': False,
+            'message': '',
+            'reward': None
+        }
+        
+        try:
+            # 1. 先访问首页获取 formhash
+            index_response = self.client.get("index.php")
+            if index_response.status_code != 200:
+                result['message'] = "无法访问论坛首页"
+                return result
+            
+            # 提取 formhash
+            soup = BeautifulSoup(index_response.text, 'lxml')
+            formhash_input = soup.find('input', {'name': 'formhash'})
+            
+            if not formhash_input:
+                # 尝试从链接中提取
+                checkin_link = soup.find('a', href=lambda x: x and 'daily_attendance' in str(x))
+                if checkin_link:
+                    href = checkin_link.get('href', '')
+                    if 'fhash=' in href:
+                        formhash = href.split('fhash=')[1].split('&')[0]
+                    else:
+                        result['message'] = "无法获取签到 formhash"
+                        return result
+                else:
+                    result['message'] = "未找到签到链接，可能未登录"
+                    return result
+            else:
+                formhash = formhash_input.get('value', '')
+            
+            if not formhash:
+                result['message'] = "formhash 为空"
+                return result
+            
+            # 2. 发送签到请求
+            # URL: study_daily_attendance-daily_attendance.html?fhash=xxxxx
+            checkin_url = f"study_daily_attendance-daily_attendance.html?fhash={formhash}"
+            checkin_response = self.client.get(checkin_url)
+            
+            if checkin_response.status_code != 200:
+                result['message'] = f"签到请求失败，状态码：{checkin_response.status_code}"
+                return result
+            
+            # 3. 解析签到结果
+            response_html = checkin_response.text
+            response_soup = BeautifulSoup(response_html, 'lxml')
+            
+            # 检查是否签到成功
+            # Discuz 通常会有提示信息
+            if '签到成功' in response_html or '打卡成功' in response_html:
+                result['success'] = True
+                result['message'] = "签到成功！"
+                
+                # 尝试提取奖励信息
+                # 例如：金币、积分等
+                reward_info = {}
+                
+                # 查找奖励信息（根据实际页面结构调整）
+                reward_elem = response_soup.find('div', class_='c') or response_soup.find('div', id='messagetext')
+                if reward_elem:
+                    reward_text = reward_elem.get_text(strip=True)
+                    result['message'] = reward_text
+                    
+                    # 尝试提取具体奖励数值
+                    import re
+                    # 匹配类似 "获得 10 金币" 的文本
+                    coin_match = re.search(r'(\d+)\s*金币', reward_text)
+                    if coin_match:
+                        reward_info['coins'] = int(coin_match.group(1))
+                    
+                    credit_match = re.search(r'(\d+)\s*积分', reward_text)
+                    if credit_match:
+                        reward_info['credits'] = int(credit_match.group(1))
+                    
+                    if reward_info:
+                        result['reward'] = reward_info
+                
+            elif '已经签到' in response_html or '今天已签' in response_html or '重复签到' in response_html:
+                result['success'] = True
+                result['message'] = "今天已经签到过了"
+                
+            elif '需要登录' in response_html or '请先登录' in response_html:
+                result['message'] = "需要先登录"
+                
+            else:
+                # 尝试查找错误信息
+                error_elem = response_soup.find('div', class_='alert_error') or \
+                            response_soup.find('div', class_='error')
+                if error_elem:
+                    result['message'] = error_elem.get_text(strip=True)
+                else:
+                    result['message'] = "签到失败，原因未知"
+            
+            return result
+            
+        except Exception as e:
+            result['message'] = f"签到异常：{e}"
+            return result
+
 
 
 
