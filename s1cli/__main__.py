@@ -407,8 +407,9 @@ def post(forum, title, content):
 @cli.command()
 @click.argument('thread_id')
 @click.option('--content', '-c', required=True, help='回复内容')
-def reply(thread_id, content):
-    """回复帖子\n    -c 回复内容"""
+@click.option('--quote', '-q', default=None, help='引用指定楼层的 post_id')
+def reply(thread_id, content, quote):
+    """回复帖子\n    -c 回复内容\n    -q 引用指定 post_id（可选）"""
     from s1cli.api.thread import ThreadAPI
     from s1cli.api.client import S1Client
     
@@ -416,10 +417,13 @@ def reply(thread_id, content):
     client = S1Client(config)
     thread_api = ThreadAPI(client)
     
-    console.print(f"[cyan]正在回复帖子：{thread_id}[/cyan]")
+    if quote:
+        console.print(f"[cyan]正在回复帖子：{thread_id}（引用 {quote}）[/cyan]")
+    else:
+        console.print(f"[cyan]正在回复帖子：{thread_id}[/cyan]")
     
     try:
-        post_id = thread_api.reply_thread(thread_id, content)
+        post_id = thread_api.reply_thread(thread_id, content, quote_post_id=quote)
         console.print(f"[bold green]✓ 回复成功！回复ID：{post_id}[/bold green]")
     except Exception as e:
         console.print(f"[bold red]✗ 回复失败：{e}[/bold red]")
