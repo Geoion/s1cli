@@ -176,8 +176,14 @@ S1CLI 快捷键：
     
     def on_mount(self) -> None:
         """应用挂载时"""
-        # 显示欢迎信息
-        if self.config.is_logged_in():
+        if self.config.session_expired:
+            self.notify(
+                "登录会话已过期，请按 'l' 重新登录",
+                title="会话过期",
+                severity="warning",
+                timeout=8,
+            )
+        elif self.config.is_logged_in():
             user_info = self.config.get_user_info()
             username = user_info.get('username', '用户')
             self.notify(f"欢迎回来，{username}！", severity="information")
