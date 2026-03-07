@@ -30,7 +30,7 @@ console = Console()
 
 @click.group(invoke_without_command=True)
 @click.pass_context
-@click.version_option(version="0.1.1")
+@click.version_option(version="0.2.0")
 def cli(ctx):
     """S1CLI - Stage1st 论坛命令行工具
     
@@ -80,6 +80,10 @@ def cli(ctx):
     s1cli search 塞尔达 -f 游戏论坛
     
     \b
+    # 收藏帖子
+    s1cli favorite 2265995
+    
+    \b
     # 每日签到打卡
     s1cli checkin
     
@@ -95,9 +99,9 @@ def cli(ctx):
         click.echo(ctx.get_help())
 
 
-@cli.command()
+@cli.command(hidden=True)
 def tui():
-    """启动图形界面"""
+    """启动图形界面（开发中）"""
     from s1cli.ui.app import S1App
     
     console.print("[bold green]正在启动 S1CLI...[/bold green]")
@@ -141,11 +145,26 @@ def login(username, password):
 @cli.command()
 def logout():
     """登出并清除本地会话"""
-    from s1cli.config import Config
-    
+    from s1cli.api.auth import AuthAPI
+    from s1cli.api.client import S1Client
+
     config = Config()
-    config.clear_session()
-    console.print("[bold green]✓ 已登出[/bold green]")
+
+    if not config.is_logged_in():
+        console.print("[yellow]当前未登录[/yellow]")
+        return
+
+    client = S1Client(config)
+    auth = AuthAPI(client)
+
+    try:
+        auth.logout()
+        console.print("[bold green]✓ 已登出[/bold green]")
+    except Exception as e:
+        console.print(f"[bold red]✗ 登出失败：{e}[/bold red]")
+        console.print("[dim]本地会话已清除[/dim]")
+        config.clear_session()
+        sys.exit(1)
 
 
 @cli.command()
@@ -535,6 +554,55 @@ def debug(ua, show_expire):
 
 
 @cli.command()
+@click.argument('thread_id')
+def favorite(thread_id):
+    """收藏帖子"""
+    from s1cli.api.thread import ThreadAPI
+    from s1cli.api.client import S1Client
+    from rich.panel import Panel
+
+    config = Config()
+
+    if not config.is_logged_in():
+        console.print("[bold red]✗ 请先登录！[/bold red]")
+        console.print("[dim]使用 's1cli login' 登录账号[/dim]")
+        sys.exit(1)
+
+    client = S1Client(config)
+    thread_api = ThreadAPI(client)
+
+    console.print(f"[cyan]正在收藏帖子：{thread_id}[/cyan]")
+
+    try:
+        result = thread_api.favorite_thread(thread_id)
+
+        if result['success']:
+            if result.get('already_favorited'):
+                console.print(Panel(
+                    result['message'],
+                    title="[bold yellow]已收藏[/bold yellow]",
+                    border_style="yellow"
+                ))
+            else:
+                console.print(Panel(
+                    result['message'],
+                    title="[bold green]✓ 收藏成功[/bold green]",
+                    border_style="green"
+                ))
+        else:
+            console.print(Panel(
+                result['message'],
+                title="[bold red]✗ 收藏失败[/bold red]",
+                border_style="red"
+            ))
+            sys.exit(1)
+
+    except Exception as e:
+        console.print(f"[bold red]✗ 收藏出错：{e}[/bold red]")
+        sys.exit(1)
+
+
+@cli.command()
 def checkin():
     """每日签到打卡"""
     from s1cli.api.client import S1Client
@@ -558,25 +626,32 @@ def checkin():
         result = auth.daily_checkin()
         
         if result['success']:
-            # 签到成功
-            message = result['message']
-            reward = result.get('reward')
-            
-            if reward:
-                reward_text = []
-                if 'coins' in reward:
-                    reward_text.append(f"💰 金币 +{reward['coins']}")
-                if 'credits' in reward:
-                    reward_text.append(f"⭐ 积分 +{reward['credits']}")
+            if result.get('already_checked'):
+                # 今天已经签到过了
+                console.print(Panel(
+                    result['message'],
+                    title="[bold yellow]已签到[/bold yellow]",
+                    border_style="yellow"
+                ))
+            else:
+                # 本次签到成功
+                message = result['message']
+                reward = result.get('reward')
                 
-                if reward_text:
-                    message += "\n" + " | ".join(reward_text)
-            
-            console.print(Panel(
-                message,
-                title="[bold green]✓ 签到成功[/bold green]",
-                border_style="green"
-            ))
+                if reward:
+                    reward_text = []
+                    if 'coins' in reward:
+                        reward_text.append(f"金币 +{reward['coins']}")
+                    if 'credits' in reward:
+                        reward_text.append(f"积分 +{reward['credits']}")
+                    if reward_text:
+                        message += "\n" + " | ".join(reward_text)
+                
+                console.print(Panel(
+                    message,
+                    title="[bold green]✓ 签到成功[/bold green]",
+                    border_style="green"
+                ))
         else:
             # 签到失败
             console.print(Panel(
