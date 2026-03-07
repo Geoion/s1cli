@@ -137,26 +137,37 @@ class LoginScreen(Screen):
         # 禁用按钮防止重复点击
         login_btn = self.query_one("#login-btn", Button)
         login_btn.disabled = True
-        
+
+        self._login_username = username
+        self._login_password = password
+        self.run_worker(self._do_login, exclusive=True, thread=True)
+
+    def _do_login(self) -> None:
+        """在后台线程执行登录，避免阻塞 TUI 主线程"""
+        username = self._login_username
+        password = self._login_password
         try:
-            # 执行登录
             success = self.auth.login(username, password)
-            
-            if success:
-                message.update("✅ 登录成功！")
-                message.classes = "success-message"
-                # 延迟关闭，让用户看到成功消息
-                self.set_timer(1.0, self.dismiss_success)
-            else:
-                message.update("❌ 登录失败，请检查用户名和密码")
-                message.classes = "error-message"
-                login_btn.disabled = False
-                password_input.value = ""
-                password_input.focus()
+            self.app.call_from_thread(self._on_login_result, success, None)
         except Exception as e:
-            message.update(f"❌ 登录出错：{str(e)}")
+            self.app.call_from_thread(self._on_login_result, False, str(e))
+
+    def _on_login_result(self, success: bool, error) -> None:
+        message = self.query_one("#message", Static)
+        login_btn = self.query_one("#login-btn", Button)
+        password_input = self.query_one("#password-input", Input)
+
+        if success:
+            message.update("✅ 登录成功！")
+            message.classes = "success-message"
+            self.set_timer(1.0, self.dismiss_success)
+        else:
+            msg = f"❌ 登录出错：{error}" if error else "❌ 登录失败，请检查用户名和密码"
+            message.update(msg)
             message.classes = "error-message"
             login_btn.disabled = False
+            password_input.value = ""
+            password_input.focus()
     
     def dismiss_success(self) -> None:
         """登录成功后关闭界面"""
