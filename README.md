@@ -5,7 +5,7 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Python 3.9+](https://img.shields.io/badge/python-3.9+-blue.svg)](https://www.python.org/downloads/)
 
-## ✨ 特性
+## 特性
 
 - 🔐 **登录状态持久化** - 自动保存登录信息，支持会话过期检测（7天）
 - 📱 **浏览器模拟** - 模拟真实 Chrome User Agent + 完整 Headers，避免被封号
@@ -17,9 +17,9 @@
   - ✅ 搜索帖子（支持版块限定）
   - ✅ 个人信息查看
   - ✅ 每日签到打卡
-  - ⏳ 收藏、点赞（开发中）
+  - ✅ 收藏帖子
 
-## 🚀 快速开始
+## 快速开始
 
 ### 安装
 
@@ -119,6 +119,9 @@ s1cli profile
 # 每日签到打卡
 s1cli checkin
 
+# 收藏帖子
+s1cli favorite 2265956
+
 # 登出
 s1cli logout
 ```
@@ -161,7 +164,7 @@ s1cli search "塞尔达" --forum 游戏论坛
 s1cli post --forum 游戏论坛 --title "关于游戏的讨论" --content "这里是内容..."
 ```
 
-## 📂 配置文件
+## 配置文件
 
 配置文件存储在 `~/.config/s1cli/`：
 
@@ -171,7 +174,7 @@ s1cli post --forum 游戏论坛 --title "关于游戏的讨论" --content "这�
 
 会话信息会自动保存，7天后过期，过期后需要重新登录。
 
-## 🔧 开发
+## 开发
 
 ### 安装开发依赖
 
@@ -211,7 +214,7 @@ mypy s1cli
 pytest
 ```
 
-## 📊 项目结构
+## 项目结构
 
 ```
 s1cli/
@@ -240,7 +243,7 @@ s1cli/
 └── LICENSE                  # MIT 许可证
 ```
 
-## 🎯 技术要点
+## 技术要点
 
 ### Discuz API 逆向
 
@@ -291,7 +294,7 @@ time.sleep(delay)
 - Base64 编码安全存储
 - 自动过期检测（7天）
 
-## 🎓 技术栈
+## 技术栈
 
 - **语言**: Python 3.9+
 - **包管理**: uv / pip
@@ -301,7 +304,7 @@ time.sleep(delay)
 - **美化输出**: Rich
 - **配置格式**: TOML
 
-## 📈 项目状态
+## 项目状态
 
 ### ✅ 已完成
 
@@ -322,15 +325,14 @@ time.sleep(delay)
 - [ ] 图片预览支持
 - [ ] BBCode 格式化显示
 - [x] 签到功能实现 ✓
-- [ ] 收藏功能
-- [ ] 点赞功能
+- [x] 收藏功能 ✓
 
 #### 测试
 - [ ] 单元测试
 - [ ] 集成测试
 - [ ] Mock 测试数据
 
-## 🪟 Windows 用户特别说明
+## Windows 用户特别说明
 
 ### 中文显示问题
 
@@ -368,7 +370,7 @@ python test_encoding.py
 winget install Microsoft.WindowsTerminal
 ```
 
-## 💡 常见问题
+## 常见问题
 
 ### 登录失败
 
@@ -416,26 +418,49 @@ winget install Microsoft.WindowsTerminal
    python test_encoding.py
    ```
 
-## 🤝 贡献
+## 贡献
 
 欢迎提交 Issue 和 Pull Request！
 
-## 📄 许可证
+## 许可证
 
 MIT License - 详见 [LICENSE](LICENSE) 文件
 
-## ⚠️ 免责声明
+## 免责声明
 
 本工具仅供学习交流使用，请遵守 Stage1st 论坛的用户协议和使用规则。使用本工具产生的任何后果由使用者自行承担。
 
-## 🔗 链接
+## 链接
 
 - **项目主页**: https://github.com/Geoion/s1cli
 - **问题反馈**: https://github.com/Geoion/s1cli/issues
 
 ---
 
-## 📝 更新日志
+## 更新日志
+
+### [0.2.0] - 2026-03-08
+
+#### 新增功能
+- **收藏帖子** - 支持一键收藏帖子到个人收藏夹
+  - 命令行接口：`s1cli favorite <thread_id>`
+  - 智能识别收藏状态（成功/已收藏）
+- **自动签到优化** - 重写签到判断逻辑，通过检测首页"打卡签到"按钮是否存在来判断签到状态，更准确可靠
+
+#### 错误处理改进
+- 修复全局吞噬异常导致后续调用 crash 的问题，异常现在正确向上传播
+- 修复空 catch 静默忽略问题，HTML 结构变化时会记录 debug 日志
+- 修复会话过期后 TUI 用户无感知的问题，现在会弹出警告提示重新登录
+- 修复 `logout` 不检查 formhash 导致静默失败的问题
+
+#### 性能优化
+- 消除循环内重复 `import`，统一提至文件顶部
+- 抽取重复的 URL 处理逻辑为 `_process_content_elem` 静态方法
+- `get_thread_list` 按名称查找版块时优先读本地缓存，避免重复网络请求
+- 删除 `utils.py` 中无状态的冗余 `rate_limit` 装饰器
+- TUI 所有网络请求改为后台线程执行（`run_worker`），界面不再冻结
+
+---
 
 ### [0.1.1] - 2025-11-06
 
