@@ -1,26 +1,5 @@
 """工具函数"""
-import time
-import random
 from typing import Optional
-from functools import wraps
-
-
-def rate_limit(min_delay: float = 0.5, max_delay: float = 2.0):
-    """请求频率限制装饰器
-    
-    Args:
-        min_delay: 最小延迟（秒）
-        max_delay: 最大延迟（秒）
-    """
-    def decorator(func):
-        @wraps(func)
-        def wrapper(*args, **kwargs):
-            # 随机延迟，避免被识别为机器人
-            delay = random.uniform(min_delay, max_delay)
-            time.sleep(delay)
-            return func(*args, **kwargs)
-        return wrapper
-    return decorator
 
 
 def strip_html_tags(html: str) -> str:
