@@ -73,42 +73,51 @@ class ThreadListScreen(Screen):
         self.load_threads()
     
     def load_threads(self) -> None:
-        """加载帖子列表"""
-        status = self.query_one("#status-bar", Static)
-        status.update(f"🔄 正在加载第{self.page}页...")
-        
+        """触发后台加载帖子列表"""
+        self.query_one("#status-bar", Static).update(f"🔄 正在加载第{self.page}页...")
+        self.run_worker(self._fetch_threads, exclusive=True, thread=True)
+
+    def _fetch_threads(self) -> None:
+        """在后台线程中执行网络请求，完成后回到主线程更新 UI"""
+        page = self.page
+        forum_name = self.forum_name
         try:
-            self.threads = self.forum_api.get_thread_list(self.forum_name, self.page)
-            
-            table = self.query_one("#thread-table", DataTable)
-            table.clear()
-            
-            if not self.threads:
-                status.update(f"❌ 没有找到帖子")
-                return
-            
-            # 添加数据行
-            for thread in self.threads:
-                # 添加标记
-                title = thread.title
-                if thread.is_sticky:
-                    title = f"📌 {title}"
-                if thread.is_digest:
-                    title = f"💎 {title}"
-                
-                table.add_row(
-                    thread.id,
-                    title[:50],  # 限制标题长度
-                    thread.author,
-                    str(thread.replies),
-                    str(thread.views)
-                )
-            
-            status.update(f"✅ 已加载 {len(self.threads)} 个帖子 | 第{self.page}页 | "
-                         f"[n]下一页 [p]上一页 [r]刷新 [Enter]查看")
-            
+            threads = self.forum_api.get_thread_list(forum_name, page)
         except Exception as e:
-            status.update(f"❌ 加载失败：{str(e)}")
+            self.app.call_from_thread(self._on_threads_error, str(e))
+            return
+        self.app.call_from_thread(self._on_threads_loaded, threads)
+
+    def _on_threads_loaded(self, threads) -> None:
+        self.threads = threads
+        table = self.query_one("#thread-table", DataTable)
+        status = self.query_one("#status-bar", Static)
+        table.clear()
+
+        if not threads:
+            status.update("❌ 没有找到帖子")
+            return
+
+        for thread in threads:
+            title = thread.title
+            if thread.is_sticky:
+                title = f"📌 {title}"
+            if thread.is_digest:
+                title = f"💎 {title}"
+            table.add_row(
+                thread.id,
+                title[:50],
+                thread.author,
+                str(thread.replies),
+                str(thread.views),
+            )
+        status.update(
+            f"✅ 已加载 {len(threads)} 个帖子 | 第{self.page}页 | "
+            "[n]下一页 [p]上一页 [r]刷新 [Enter]查看"
+        )
+
+    def _on_threads_error(self, error: str) -> None:
+        self.query_one("#status-bar", Static).update(f"❌ 加载失败：{error}")
     
     def action_back(self) -> None:
         """返回"""
