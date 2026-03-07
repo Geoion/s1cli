@@ -1,10 +1,14 @@
 """论坛版块和帖子列表 API"""
+import re
+import logging
 from typing import List, Optional
 from bs4 import BeautifulSoup
 from datetime import datetime
 from s1cli.api.client import S1Client
 from s1cli.models.forum import Forum
 from s1cli.models.thread import Thread
+
+logger = logging.getLogger(__name__)
 
 
 class ForumAPI:
@@ -31,7 +35,6 @@ class ForumAPI:
             soup = BeautifulSoup(html, 'lxml')
             
             forums = []
-            import re
             
             # Stage1st 主论坛使用 <table class="fl_tb"> 结构
             table = soup.find('table', class_='fl_tb')
@@ -121,14 +124,15 @@ class ForumAPI:
                         )
                         forums.append(forum)
                     
-                except Exception:
+                except Exception as e:
+                    logger.debug("解析版块行失败，已跳过：%s", e)
                     continue
             
             return forums
             
         except Exception as e:
-            print(f"获取版块列表异常：{e}")
-            return []
+            logger.error("获取版块列表异常：%s", e)
+            raise
     
     def get_thread_list(
         self, 
@@ -145,14 +149,30 @@ class ForumAPI:
             帖子列表
         """
         try:
-            # 如果是名称，先查找对应的 ID
+            # 如果是名称，先查找对应的 ID（优先读本地缓存，避免重复网络请求）
             forum_id = forum_name_or_id
             if not forum_name_or_id.isdigit():
-                forums = self.get_forum_list()
-                for forum in forums:
-                    if forum.name == forum_name_or_id:
-                        forum_id = forum.id
-                        break
+                cached = self.client.config.load_forum_list()
+                if cached:
+                    for f in cached:
+                        if f['name'] == forum_name_or_id:
+                            forum_id = f['id']
+                            break
+                    else:
+                        # 缓存里没有，再发网络请求
+                        forums = self.get_forum_list()
+                        self.client.config.save_forum_list(forums)
+                        for forum in forums:
+                            if forum.name == forum_name_or_id:
+                                forum_id = forum.id
+                                break
+                else:
+                    forums = self.get_forum_list()
+                    self.client.config.save_forum_list(forums)
+                    for forum in forums:
+                        if forum.name == forum_name_or_id:
+                            forum_id = forum.id
+                            break
             
             # 构造版块 URL
             url = f"forum.php?mod=forumdisplay&fid={forum_id}&page={page}"
@@ -266,12 +286,12 @@ class ForumAPI:
                         threads.append(thread)
                         
                 except Exception as e:
-                    # 跳过解析失败的帖子
+                    logger.debug("解析帖子行失败，已跳过：%s", e)
                     continue
             
             return threads
             
         except Exception as e:
-            print(f"获取帖子列表异常：{e}")
-            return []
+            logger.error("获取帖子列表异常 forum=%s page=%s: %s", forum_name_or_id, page, e)
+            raise
 
