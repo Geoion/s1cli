@@ -64,16 +64,22 @@ class Config:
         if self.session_file.exists():
             try:
                 session = toml.load(self.session_file)
-                # 检查会话是否过期
                 if self._is_session_expired(session):
-                    print("会话已过期")
+                    self._session_expired = True
                     return {}
+                self._session_expired = False
                 return session
             except Exception as e:
-                print(f"警告：加载会话文件失败：{e}")
+                import logging
+                logging.getLogger(__name__).warning("加载会话文件失败：%s", e)
                 return {}
-        else:
-            return {}
+        self._session_expired = False
+        return {}
+
+    @property
+    def session_expired(self) -> bool:
+        """上次加载的会话是否已过期（有 cookies 但已失效）"""
+        return getattr(self, '_session_expired', False)
     
     def _is_session_expired(self, session: Dict[str, Any]) -> bool:
         """检查会话是否过期
