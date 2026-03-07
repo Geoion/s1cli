@@ -415,7 +415,13 @@ class ThreadAPI:
                 resp_soup.find('div', class_='c') or
                 resp_soup.find('div', class_='alert_info')
             )
-            msg_text = msg_elem.get_text(strip=True) if msg_elem else ''
+            if msg_elem:
+                first_p = msg_elem.find('p')
+                msg_text = first_p.get_text(strip=True) if first_p else msg_elem.get_text(strip=True)
+                for noise in ('如果您的浏览器没有自动跳转，请点击此链接', '点击此处'):
+                    msg_text = msg_text.replace(noise, '').strip()
+            else:
+                msg_text = ''
 
             if '已经收藏' in html or '重复收藏' in html or '已收藏' in html:
                 result['success'] = True

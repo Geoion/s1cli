@@ -289,14 +289,21 @@ class AuthAPI:
             response_html = checkin_response.text
             response_soup = BeautifulSoup(response_html, 'lxml')
             
-            # 提取提示信息
+            # 提取提示信息，只取第一个 <p> 段落，避免把"请点击此链接"等跳转文字一并带出
             msg_elem = (
                 response_soup.find('div', id='messagetext') or
                 response_soup.find('div', class_='c') or
                 response_soup.find('div', class_='alert_info') or
                 response_soup.find('div', class_='alert_right')
             )
-            msg_text = msg_elem.get_text(strip=True) if msg_elem else ''
+            if msg_elem:
+                first_p = msg_elem.find('p')
+                msg_text = first_p.get_text(strip=True) if first_p else msg_elem.get_text(strip=True)
+                # 去掉 Discuz 自动跳转提示语
+                for noise in ('如果您的浏览器没有自动跳转，请点击此链接', '点击此处'):
+                    msg_text = msg_text.replace(noise, '').strip()
+            else:
+                msg_text = ''
             
             if '签到成功' in response_html or '打卡成功' in response_html:
                 result['success'] = True
