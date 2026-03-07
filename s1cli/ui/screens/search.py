@@ -101,41 +101,49 @@ class SearchScreen(Screen):
             self.action_search()
     
     def action_search(self) -> None:
-        """执行搜索"""
+        """触发后台搜索"""
         search_input = self.query_one("#search-input", Input)
         keyword = search_input.value.strip()
-        
+
         if not keyword:
             self.notify("请输入搜索关键词", severity="warning")
             return
-        
-        status = self.query_one("#status-bar", Static)
-        status.update(f"🔄 正在搜索：{keyword}")
-        
+
+        self._pending_keyword = keyword
+        self.query_one("#status-bar", Static).update(f"🔄 正在搜索：{keyword}")
+        self.run_worker(self._fetch_search, exclusive=True, thread=True)
+
+    def _fetch_search(self) -> None:
+        keyword = self._pending_keyword
         try:
-            self.results = self.search_api.search(keyword)
-            
-            table = self.query_one("#results-table", DataTable)
-            table.clear()
-            
-            if not self.results:
-                status.update(f"❌ 没有找到相关结果")
-                return
-            
-            # 添加数据行
-            for result in self.results:
-                table.add_row(
-                    result.id,
-                    result.title[:50],  # 限制标题长度
-                    result.forum or "未知",
-                    result.author,
-                    str(result.replies)
-                )
-            
-            status.update(f"✅ 找到 {len(self.results)} 个结果 | [Enter]查看帖子")
-            
+            results = self.search_api.search(keyword)
         except Exception as e:
-            status.update(f"❌ 搜索失败：{str(e)}")
+            self.app.call_from_thread(self._on_search_error, str(e))
+            return
+        self.app.call_from_thread(self._on_search_done, results)
+
+    def _on_search_done(self, results) -> None:
+        self.results = results
+        table = self.query_one("#results-table", DataTable)
+        status = self.query_one("#status-bar", Static)
+        table.clear()
+
+        if not results:
+            status.update("❌ 没有找到相关结果")
+            return
+
+        for result in results:
+            table.add_row(
+                result.id,
+                result.title[:50],
+                result.forum or "未知",
+                result.author,
+                str(result.replies),
+            )
+        status.update(f"✅ 找到 {len(results)} 个结果 | [Enter]查看帖子")
+
+    def _on_search_error(self, error: str) -> None:
+        self.query_one("#status-bar", Static).update(f"❌ 搜索失败：{error}")
     
     def action_back(self) -> None:
         """返回"""
