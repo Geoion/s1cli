@@ -9,6 +9,7 @@ from s1cli.api.thread import ThreadAPI
 from s1cli.utils import strip_html_tags
 
 
+
 class ThreadViewScreen(Screen):
     """帖子详情查看界面"""
     
@@ -104,62 +105,53 @@ class ThreadViewScreen(Screen):
         self.load_thread()
     
     def load_thread(self) -> None:
-        """加载帖子详情"""
-        status = self.query_one("#status-bar", Static)
-        status.update(f"🔄 正在加载帖子...")
-        
+        """触发后台加载帖子详情"""
+        self.query_one("#status-bar", Static).update("🔄 正在加载帖子...")
+        self.run_worker(self._fetch_thread, exclusive=True, thread=True)
+
+    def _fetch_thread(self) -> None:
+        """在后台线程中执行网络请求"""
         try:
-            self.thread = self.thread_api.get_thread(self.thread_id, self.page)
-            
-            if not self.thread:
-                status.update(f"❌ 未找到帖子")
-                return
-            
-            # 更新标题和信息
-            title_widget = self.query_one("#thread-title", Static)
-            title_widget.update(f"📖 {self.thread.title}")
-            
-            info_widget = self.query_one("#thread-info", Static)
-            info_widget.update(
-                f"作者：{self.thread.author} | "
-                f"查看：{self.thread.views} | "
-                f"回复：{self.thread.replies} | "
-                f"第{self.page}页"
-            )
-            
-            # 显示内容
-            content_log = self.query_one("#content-log", RichLog)
-            content_log.clear()
-            
-            # 显示楼主内容
-            content_log.write(f"[bold cyan]━━━ 楼主 ━━━[/bold cyan]")
-            content_log.write(f"[bold]{self.thread.author}[/bold]")
-            content_log.write("")
-            
-            # 清理HTML并显示内容
-            clean_content = strip_html_tags(self.thread.content) if self.thread.content else "（无内容）"
-            content_log.write(clean_content)
-            content_log.write("")
-            
-            # 显示回复
-            if self.thread.posts:
-                for post in self.thread.posts:
-                    content_log.write(f"[bold cyan]━━━ {post.floor}楼 ━━━[/bold cyan]")
-                    content_log.write(f"[bold]{post.author}[/bold]")
-                    content_log.write("")
-                    
-                    clean_post_content = strip_html_tags(post.content) if post.content else "（无内容）"
-                    content_log.write(clean_post_content)
-                    content_log.write("")
-            
-            status.update(
-                f"✅ 已加载 {len(self.thread.posts)} 条回复 | "
-                f"第{self.page}页 | "
-                f"[n]下一页 [p]上一页 [r]刷新 [j/k]滚动"
-            )
-            
+            thread = self.thread_api.get_thread(self.thread_id, self.page)
         except Exception as e:
-            status.update(f"❌ 加载失败：{str(e)}")
+            self.app.call_from_thread(self._on_thread_error, str(e))
+            return
+        self.app.call_from_thread(self._on_thread_loaded, thread)
+
+    def _on_thread_loaded(self, thread) -> None:
+        self.thread = thread
+        status = self.query_one("#status-bar", Static)
+
+        self.query_one("#thread-title", Static).update(f"📖 {thread.title}")
+        self.query_one("#thread-info", Static).update(
+            f"作者：{thread.author} | 查看：{thread.views} | "
+            f"回复：{thread.replies} | 第{self.page}页"
+        )
+
+        content_log = self.query_one("#content-log", RichLog)
+        content_log.clear()
+        content_log.write("[bold cyan]━━━ 楼主 ━━━[/bold cyan]")
+        content_log.write(f"[bold]{thread.author}[/bold]")
+        content_log.write("")
+        clean_content = strip_html_tags(thread.content) if thread.content else "（无内容）"
+        content_log.write(clean_content)
+        content_log.write("")
+
+        for post in thread.posts:
+            content_log.write(f"[bold cyan]━━━ {post.floor}楼 ━━━[/bold cyan]")
+            content_log.write(f"[bold]{post.author}[/bold]")
+            content_log.write("")
+            clean_post = strip_html_tags(post.content) if post.content else "（无内容）"
+            content_log.write(clean_post)
+            content_log.write("")
+
+        status.update(
+            f"✅ 已加载 {len(thread.posts)} 条回复 | "
+            f"第{self.page}页 | [n]下一页 [p]上一页 [r]刷新 [j/k]滚动"
+        )
+
+    def _on_thread_error(self, error: str) -> None:
+        self.query_one("#status-bar", Static).update(f"❌ 加载失败：{error}")
     
     def action_back(self) -> None:
         """返回"""
