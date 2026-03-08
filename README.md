@@ -23,27 +23,37 @@
 
 ### 安装
 
-#### 使用 uv（推荐，更快）
+#### Homebrew（macOS 推荐）
 
 ```bash
-# 克隆项目
-git clone https://github.com/Geoion/s1cli.git
-cd s1cli
-
-# 安装
-uv pip install -e .
+brew tap Geoion/tap
+brew install s1cli
 ```
 
-#### 使用 pip
+#### pip
+
+```bash
+pip install s1cli
+```
+
+> **OpenClaw 用户**：请通过 [https://clawhub.ai/Geoion/s1cli](https://clawhub.ai/Geoion/s1cli) 安装。
+
+<details>
+<summary>开发者安装（从源码）</summary>
 
 ```bash
 # 克隆项目
 git clone https://github.com/Geoion/s1cli.git
 cd s1cli
 
-# 安装
+# 使用 uv（推荐）
+uv pip install -e .
+
+# 或使用 pip
 pip install -e .
 ```
+
+</details>
 
 ### 基本使用
 
@@ -176,6 +186,9 @@ s1cli post --forum 游戏论坛 --title "关于游戏的讨论" --content "这�
 
 ## 开发
 
+<details>
+<summary>开发环境配置</summary>
+
 ### 安装开发依赖
 
 ```bash
@@ -213,6 +226,8 @@ mypy s1cli
 ```bash
 pytest
 ```
+
+</details>
 
 ## 项目结构
 
@@ -494,20 +509,11 @@ MIT License - 详见 [LICENSE](LICENSE) 文件
 - 登录状态持久化（7天有效期）
 - Chrome UA 模拟
 - 请求频率限制（0.5-2秒随机延迟）
-
-##### 功能特性
 - 查看论坛版块和帖子列表
 - 阅读帖子内容和回复
 - 发布新帖和回复帖子
 - 搜索帖子（支持版块限定）
 - 个人信息查看
-
-##### 技术实现
-- 自定义异常类（7种异常类型）
-- 重试装饰器（指数退避）
-- 错误处理装饰器
-- 完整的类型注解
-- 详细的文档字符串
 
 ##### 项目管理
 - 从 Poetry 迁移到 uv（更快的包管理器）
