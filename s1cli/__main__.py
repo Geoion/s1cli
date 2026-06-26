@@ -30,7 +30,7 @@ console = Console()
 
 @click.group(invoke_without_command=True)
 @click.pass_context
-@click.version_option(version="0.2.0")
+@click.version_option(version="0.2.1")
 def cli(ctx):
     """S1CLI - Stage1st 论坛命令行工具
     
@@ -443,7 +443,11 @@ def reply(thread_id, content, quote):
     
     try:
         post_id = thread_api.reply_thread(thread_id, content, quote_post_id=quote)
-        console.print(f"[bold green]✓ 回复成功！回复ID：{post_id}[/bold green]")
+        if post_id:
+            console.print(f"[bold green]✓ 回复成功！回复ID：{post_id}[/bold green]")
+        else:
+            console.print(f"[bold green]✓ 回复成功！[/bold green]")
+            console.print(f"[dim]提示：使用 's1cli thread {thread_id}' 查看回复[/dim]")
     except Exception as e:
         console.print(f"[bold red]✗ 回复失败：{e}[/bold red]")
         sys.exit(1)

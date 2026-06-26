@@ -361,13 +361,46 @@ class ThreadAPI:
             # 4. 检查回复是否成功
             if reply_response.status_code == 200:
                 response_html = reply_response.text
-                
+
+                # 检测明确的失败信号
+                failure_keywords = [
+                    '回复间隔', '频繁', '超出限制', '需要登录', '请先登录',
+                    '安全码错误', '操作失败', '没有权限',
+                ]
+                for kw in failure_keywords:
+                    if kw in response_html:
+                        soup_resp = BeautifulSoup(response_html, 'lxml')
+                        msg_elem = (
+                            soup_resp.find('div', id='messagetext') or
+                            soup_resp.find('div', class_='c') or
+                            soup_resp.find('div', class_='alert_info')
+                        )
+                        if msg_elem:
+                            first_p = msg_elem.find('p')
+                            msg_text = first_p.get_text(strip=True) if first_p else msg_elem.get_text(strip=True)
+                        else:
+                            msg_text = kw
+                        raise RuntimeError(f"回复被拒绝：{msg_text}")
+
                 # 尝试提取回复 ID
                 match = re.search(r'pid=(\d+)', response_html)
                 if match:
                     return match.group(1)
-            
-            return None
+
+                # 检测成功信号（论坛跳转或成功提示）
+                success_keywords = ['回复成功', '发表成功', '回复发布成功', 'succeed', 'thread-', 'tid=']
+                for kw in success_keywords:
+                    if kw in response_html:
+                        return None  # 已成功，只是无法提取 pid
+
+                # 无法判断结果，记录响应内容帮助调试
+                logger.warning(
+                    "回复响应无法判断结果 tid=%s status=%s，响应片段: %s",
+                    thread_id, reply_response.status_code, response_html[:500]
+                )
+                raise RuntimeError("回复请求已提交，但无法确认是否成功，请手动刷新帖子查看")
+
+            raise RuntimeError(f"回复请求异常，HTTP 状态码：{reply_response.status_code}")
             
         except Exception as e:
             logger.error("回复异常 tid=%s: %s", thread_id, e)
